@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Wasana Bakers</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header Section -->
+    <header id="header">
+        <div class="container">
+            <div class="logo">
+                <a href="#home">
+                    <img src="images/Logo.png" alt="Wasana Bakers Logo">
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#products">Products</a></li>
+                    <li><a href="#orders">Orders</a></li>
+                    <li><a href="#admins">Admins</a></li>
+                    <li><a href="#users">Users</a></li>
+                    <li><a href="#messages">Messages</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <a href="#login" class="login-btn">Login/SignUp</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Home Section (Sales Analysis with Charts) -->
+    <section id="home" class="home">
+        <div class="container">
+            <h2>Dashboard Overview</h2>
+            <div class="charts-container">
+                <div class="chart">
+                    <canvas id="sales-chart"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="order-chart"></canvas>
+                </div>
+                <div class="chart">
+                    <canvas id="user-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section id="products" class="products">
+        <div class="container">
+            <h2>Products</h2>
+            <div class="admin-actions">
+                <button class="add-btn">Add Product</button>
+            </div>
+            <div class="products-grid">
+                <!-- Product Card 1 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="/api/placeholder/200/200" alt="Chocolate Cake">
+                    </div>
+                    <div class="product-details">
+                        <h3>Chocolate Cake</h3>
+                        <p>Category: Cake</p>
+                        <p>Availability: In Stock</p>
+                        <p class="price">LKR 1500.00</p>
+                        <div class="admin-controls">
+                            <button class="update-btn">Update</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Product Card 2 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="/api/placeholder/200/200" alt="Bread Loaf">
+                    </div>
+                    <div class="product-details">
+                        <h3>Bread Loaf</h3>
+                        <p>Category: Bread</p>
+                        <p>Availability: In Stock</p>
+                        <p class="price">LKR 300.00</p>
+                        <div class="admin-controls">
+                            <button class="update-btn">Update</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Orders Section -->
+    <section id="orders" class="orders">
+        <div class="container">
+            <h2>Orders</h2>
+            <div class="orders-grid">
+                <!-- Order Item 1 -->
+                <div class="order-card">
+                    <p>Order #001 - Chocolate Cake x2</p>
+                    <p>Status: Pending</p>
+                    <div class="admin-controls">
+                        <button class="mark-read-btn">Mark as Read</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+                <!-- Order Item 2 -->
+                <div class="order-card">
+                    <p>Order #002 - Bread Loaf x1</p>
+                    <p>Status: Completed</p>
+                    <div class="admin-controls">
+                        <button class="mark-read-btn">Mark as Read</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Admins Section -->
+    <section id="admins" class="admins">
+        <div class="container">
+            <h2>Admins</h2>
+            <div class="admin-actions">
+                <button class="add-btn">Add Admin</button>
+            </div>
+            <div class="admins-grid">
+                <!-- Admin 1 -->
+                <div class="admin-card">
+                    <p>Name: John Doe</p>
+                    <p>Email: john@example.com</p>
+                    <div class="admin-controls">
+                        <button class="update-btn">Update</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+                <!-- Admin 2 -->
+                <div class="admin-card">
+                    <p>Name: Jane Smith</p>
+                    <p>Email: jane@example.com</p>
+                    <div class="admin-controls">
+                        <button class="update-btn">Update</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Users Section -->
+    <section id="users" class="users">
+        <div class="container">
+            <h2>Users</h2>
+            <div class="admin-actions">
+                <button class="add-btn">Add User</button>
+            </div>
+            <div class="users-grid">
+                <!-- User 1 -->
+                <div class="user-card">
+                    <p>Name: Alice Johnson</p>
+                    <p>Email: alice@example.com</p>
+                    <div class="admin-controls">
+                        <button class="update-btn">Update</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+                <!-- User 2 -->
+                <div class="user-card">
+                    <p>Name: Bob Wilson</p>
+                    <p>Email: bob@example.com</p>
+                    <div class="admin-controls">
+                        <button class="update-btn">Update</button>
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Messages Section -->
+    <section id="messages" class="messages">
+        <div class="container">
+            <h2>Messages</h2>
+            <div class="messages-grid">
+                <!-- Message 1 -->
+                <div class="message-card">
+                    <p>From: customer1@example.com</p>
+                    <p>Message: Inquiry about cakes</p>
+                    <div class="admin-controls">
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+                <!-- Message 2 -->
+                <div class="message-card">
+                    <p>From: customer2@example.com</p>
+                    <p>Message: Order status</p>
+                    <div class="admin-controls">
+                        <button class="delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer>
+        <div class="container">
+            <p>© 2025 Wasana Bakers. All rights reserved.</p>
+            <div class="footer-contact">
+                <p>Contact: <a href="mailto:info@wasanabakers.lk">info@wasanabakers.lk</a> | Phone: +94 11 123 4567</p>
+                <p>Follow us: <a href="#">Facebook</a> | <a href="#">Instagram</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Smooth Scrolling Script -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 60, // Adjusted for header height without hero
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+
+    <!-- Chart.js Script for Charts -->
+    <script>
+        // Sales Chart (Line Chart)
+        const salesCtx = document.getElementById('sales-chart').getContext('2d');
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                datasets: [{
+                    label: 'Sales (LKR)',
+                    data: [12000, 19000, 15000, 22000, 18000],
+                    borderColor: '#002060',
+                    backgroundColor: 'rgba(0, 32, 96, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Sales (LKR)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Month' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Monthly Sales Analysis' }
+                }
+            }
+        });
+
+        // Order Count Chart (Bar Chart)
+        const orderCtx = document.getElementById('order-chart').getContext('2d');
+        new Chart(orderCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                datasets: [{
+                    label: 'Orders',
+                    data: [30, 45, 38, 50, 42],
+                    backgroundColor: '#00b050',
+                    borderColor: '#009933',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Orders' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Month' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Monthly Order Count' }
+                }
+            }
+        });
+
+        // User Count Chart (Doughnut Chart)
+        const userCtx = document.getElementById('user-chart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active Users', 'Inactive Users'],
+                datasets: [{
+                    label: 'Users',
+                    data: [120, 30],
+                    backgroundColor: ['#ffc107', '#ff4444'],
+                    borderColor: ['#e0a800', '#cc0000'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'User Distribution' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
