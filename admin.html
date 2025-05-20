@@ -58,7 +58,7 @@
         <div class="container">
             <h2>Products</h2>
             <div class="admin-actions">
-                <button class="add-btn">Add Product</button>
+                <button class="add-btn" id="add-product-btn">Add Product</button>
             </div>
             <div class="products-grid">
                 <!-- Product Card 1 -->
@@ -129,7 +129,7 @@
         <div class="container">
             <h2>Admins</h2>
             <div class="admin-actions">
-                <button class="add-btn">Add Admin</button>
+                <button class="add-btn" id="add-admin-btn">Add Admin</button>
             </div>
             <div class="admins-grid">
                 <!-- Admin 1 -->
@@ -159,7 +159,7 @@
         <div class="container">
             <h2>Users</h2>
             <div class="admin-actions">
-                <button class="add-btn">Add User</button>
+                <button class="add-btn" id="add-user-btn">Add User</button>
             </div>
             <div class="users-grid">
                 <!-- User 1 -->
@@ -209,6 +209,124 @@
         </div>
     </section>
 
+    <!-- Popup Forms -->
+    <!-- Add Product Popup -->
+    <div class="popup" id="add-product-popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-product">×</span>
+            <h2>Add Product</h2>
+            <form id="add-product-form">
+                <div class="form-group">
+                    <label for="product-name">Product Name</label>
+                    <input type="text" id="product-name" name="product-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="Cake">Cake</option>
+                        <option value="Bread">Bread</option>
+                        <option value="Pastry">Pastry</option>
+                        <option value="Dessert">Dessert</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="price">Price (LKR)</label>
+                    <input type="number" id="price" name="price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="product-image">Product Image</label>
+                    <input type="file" id="product-image" name="product-image" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="availability">Availability</label>
+                    <select id="availability" name="availability" required>
+                        <option value="">Select Availability</option>
+                        <option value="in_stock">In Stock</option>
+                        <option value="out_of_stock">Out of Stock</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Product</button>
+                    <button type="button" class="cancel-btn" id="cancel-product">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Admin Popup -->
+    <div class="popup" id="add-admin-popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-admin">×</span>
+            <h2>Add Admin</h2>
+            <form id="add-admin-form">
+                <div class="form-group">
+                    <label for="admin-username">Username</label>
+                    <input type="text" id="admin-username" name="admin-username" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-email">Email</label>
+                    <input type="email" id="admin-email" name="admin-email" placeholder="Email" required>
+                </div>
+                <div class="form-group password-group">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" name="admin-password" placeholder="Password" required>
+                    <span class="toggle-password"><i class="fas fa-eye"></i></span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Admin</button>
+                    <button type="button" class="cancel-btn" id="cancel-admin">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add User Popup -->
+    <div class="popup" id="add-user-popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-user">×</span>
+            <h2>Add User</h2>
+            <form id="add-user-form">
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" name="first-name" placeholder="First Name" required>
+                    </div>
+                    <div class="col">
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" name="last-name" placeholder="Last Name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" name="address" placeholder="Address" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone" placeholder="Phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" name="user-email" placeholder="Email" required>
+                </div>
+                <div class="form-group password-group">
+                    <label for="user-password">Password</label>
+                    <input type="password" id="user-password" name="user-password" placeholder="Password" required>
+                    <span class="toggle-password"><i class="fas fa-eye"></i></span>
+                </div>
+                <div class="form-group password-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required>
+                    <span class="toggle-password"><i class="fas fa-eye"></i></span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add User</button>
+                    <button type="button" class="cancel-btn" id="cancel-user">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer Section -->
     <footer>
         <div class="container">
@@ -229,7 +347,7 @@
                 const targetElement = document.getElementById(targetId);
                 if (targetElement) {
                     window.scrollTo({
-                        top: targetElement.offsetTop - 60, // Adjusted for header height without hero
+                        top: targetElement.offsetTop - 60,
                         behavior: 'smooth'
                     });
                 }
@@ -327,5 +445,6 @@
             }
         });
     </script>
+    <script src="js/scripts.js"></script>
 </body>
 </html>
