@@ -207,12 +207,15 @@ if (adminLoginForm) {
 // Load Products
 async function loadProducts() {
     const category = document.getElementById('category')?.value || 'all';
-    const response = await fetch(`api/products.php?category=${category}`);
+    const response = await fetch('api/products.php?category=' + encodeURIComponent(category));
     const products = await response.json();
     const productsGrid = document.querySelector('.products-grid');
     if (!productsGrid) return;
-
     productsGrid.innerHTML = '';
+    if (!products.length) {
+        productsGrid.innerHTML = '<p>No products found.</p>';
+        return;
+    }
     products.forEach(product => {
         const productCard = `
             <div class="product-card">
@@ -223,14 +226,13 @@ async function loadProducts() {
                     <h3>${product.name}</h3>
                     <p>Category: ${product.category}</p>
                     <p>Availability: ${product.availability === 'in_stock' ? 'In Stock' : 'Out of Stock'}</p>
-                    <p class="price">LKR ${product.price.toFixed(2)}</p>
+                    <p class="price">LKR ${parseFloat(product.price).toFixed(2)}</p>
                     <button class="add-to-cart-btn" data-product-id="${product.id}">Add To Cart</button>
                 </div>
             </div>
         `;
         productsGrid.innerHTML += productCard;
     });
-
     // Add to Cart Event Listeners
     document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -248,6 +250,33 @@ async function loadProducts() {
         });
     });
 }
+
+// Add to Cart for static product cards (index.html)
+document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        // For static cards, use data attributes
+        const productName = btn.getAttribute('data-name');
+        let productId = null;
+        if (productName === 'Chocolate Cake') productId = 1;
+        if (productName === 'White Bread') productId = 2;
+        if (productName === 'Cream Puff') productId = 3;
+        if (!productId) {
+            alert('Product not found.');
+            return;
+        }
+        const response = await fetch('api/cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, quantity: 1 })
+        });
+        const result = await response.json();
+        alert(result.message);
+        // If on cart page, reload cart after adding
+        if (window.location.pathname.includes('cart.html')) {
+            loadCart();
+        }
+    });
+});
 
 // Load Cart
 async function loadCart() {
@@ -442,3 +471,37 @@ if (addUserForm) {
         }
     });
 }
+
+// Add logout button if user is logged in
+function updateUserActions() {
+    fetch('api/cart.php')
+        .then(res => res.json())
+        .then(data => {
+            const userActions = document.querySelector('.user-actions');
+            if (!userActions) return;
+            if (data.success) {
+                // User is logged in
+                if (!document.getElementById('logout-btn')) {
+                    const logoutBtn = document.createElement('a');
+                    logoutBtn.href = '#';
+                    logoutBtn.className = 'logout-btn';
+                    logoutBtn.id = 'logout-btn';
+                    logoutBtn.textContent = 'Logout';
+                    userActions.appendChild(logoutBtn);
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await fetch('api/logout.php');
+                        window.location.reload();
+                    });
+                }
+                document.getElementById('login-btn').style.display = 'none';
+            } else {
+                // User is not logged in
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) logoutBtn.remove();
+                document.getElementById('login-btn').style.display = '';
+            }
+        });
+}
+
+window.addEventListener('load', updateUserActions);
