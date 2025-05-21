@@ -30,7 +30,8 @@
                 </ul>
             </nav>
             <div class="user-actions">
-                <a href="#login" class="login-btn">Login/SignUp</a>
+                
+                <a href="#" class="user-name-btn" id="user-name-btn" style="display: none;"></a>
             </div>
         </div>
     </header>
@@ -62,65 +63,16 @@
             </div>
             <div class="products-grid">
                 <!-- Product Card 1 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="/api/placeholder/200/200" alt="Chocolate Cake">
-                    </div>
-                    <div class="product-details">
-                        <h3>Chocolate Cake</h3>
-                        <p>Category: Cake</p>
-                        <p>Availability: In Stock</p>
-                        <p class="price">LKR 1500.00</p>
-                        <div class="admin-controls">
-                            <button class="update-btn">Update</button>
-                            <button class="delete-btn">Delete</button>
-                        </div>
-                    </div>
-                </div>
-                <!-- Product Card 2 -->
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="/api/placeholder/200/200" alt="Bread Loaf">
-                    </div>
-                    <div class="product-details">
-                        <h3>Bread Loaf</h3>
-                        <p>Category: Bread</p>
-                        <p>Availability: In Stock</p>
-                        <p class="price">LKR 300.00</p>
-                        <div class="admin-controls">
-                            <button class="update-btn">Update</button>
-                            <button class="delete-btn">Delete</button>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </section>
 
     <!-- Orders Section -->
-    <section id="orders" class="orders">
+    <section id="orders" class="orders-section">
         <div class="container">
             <h2>Orders</h2>
-            <div class="orders-grid">
-                <!-- Order Item 1 -->
-                <div class="order-card">
-                    <p>Order #001 - Chocolate Cake x2</p>
-                    <p>Status: Pending</p>
-                    <div class="admin-controls">
-                        <button class="mark-read-btn">Mark as Read</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-                <!-- Order Item 2 -->
-                <div class="order-card">
-                    <p>Order #002 - Bread Loaf x1</p>
-                    <p>Status: Completed</p>
-                    <div class="admin-controls">
-                        <button class="mark-read-btn">Mark as Read</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-            </div>
+            <div class="orders-grid"></div>
         </div>
     </section>
 
@@ -129,28 +81,9 @@
         <div class="container">
             <h2>Admins</h2>
             <div class="admin-actions">
-                <button class="add-btn" id="add-admin-btn">Add Admin</button>
+                <button id="add-admin-btn" class="add-btn">Add Admin</button>
             </div>
-            <div class="admins-grid">
-                <!-- Admin 1 -->
-                <div class="admin-card">
-                    <p>Name: John Doe</p>
-                    <p>Email: john@example.com</p>
-                    <div class="admin-controls">
-                        <button class="update-btn">Update</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-                <!-- Admin 2 -->
-                <div class="admin-card">
-                    <p>Name: Jane Smith</p>
-                    <p>Email: jane@example.com</p>
-                    <div class="admin-controls">
-                        <button class="update-btn">Update</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-            </div>
+            <div class="admins-grid"></div>
         </div>
     </section>
 
@@ -159,30 +92,12 @@
         <div class="container">
             <h2>Users</h2>
             <div class="admin-actions">
-                <button class="add-btn" id="add-user-btn">Add User</button>
+                <button id="add-user-btn" class="add-btn">Add User</button>
             </div>
-            <div class="users-grid">
-                <!-- User 1 -->
-                <div class="user-card">
-                    <p>Name: Alice Johnson</p>
-                    <p>Email: alice@example.com</p>
-                    <div class="admin-controls">
-                        <button class="update-btn">Update</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-                <!-- User 2 -->
-                <div class="user-card">
-                    <p>Name: Bob Wilson</p>
-                    <p>Email: bob@example.com</p>
-                    <div class="admin-controls">
-                        <button class="update-btn">Update</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </div>
-            </div>
+            <div class="users-grid"></div>
         </div>
     </section>
+
 
     <!-- Messages Section -->
     <section id="messages" class="messages">
@@ -228,6 +143,7 @@
                         <option value="Bread">Bread</option>
                         <option value="Pastry">Pastry</option>
                         <option value="Dessert">Dessert</option>
+                        <option value="Sweets">Sweets</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -249,6 +165,74 @@
                 <div class="form-actions">
                     <button type="submit" class="submit-btn">Add Product</button>
                     <button type="button" class="cancel-btn" id="cancel-product">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Update product Popup -->
+    <div id="update-product-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-update-product">&times;</span>
+            <h2>Update Product</h2>
+            <form id="update-product-form">
+                <input type="hidden" id="update-product-id" name="product_id">
+                <div class="form-group">
+                    <label for="update-product-name">Product Name</label>
+                    <input type="text" id="update-product-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-category">Category</label>
+                    <select id="update-category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="Cake">Cake</option>
+                        <option value="Bread">Bread</option>
+                        <option value="Pastry">Pastry</option>
+                        <option value="Dessert">Dessert</option>
+                        <option value="Sweets">Sweets</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="update-price">Price (LKR)</label>
+                    <input type="number" id="update-price" name="price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-product-image">Product Image (optional)</label>
+                    <input type="file" id="update-product-image" name="image" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="update-availability">Availability</label>
+                    <select id="update-availability" name="availability" required>
+                        <option value="">Select Availability</option>
+                        <option value="in_stock">In Stock</option>
+                        <option value="out_of_stock">Out of Stock</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Save Changes</button>
+                    <button type="button" class="cancel-btn" id="cancel-update-product">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Update Order Popup -->
+    <div id="update-order-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-popup" id="close-update-order">&times;</span>
+            <h2>Update Order Status</h2>
+            <form id="update-order-form">
+                <input type="hidden" id="update-order-id">
+                <div class="form-group">
+                    <label for="update-order-status">Order Status</label>
+                    <select id="update-order-status" required>
+                        <option value="">Select Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn submit-btn">Save Changes</button>
+                    <button type="button" class="btn cancel-btn" id="cancel-update-order">Cancel</button>
                 </div>
             </form>
         </div>
@@ -276,6 +260,34 @@
                 <div class="form-actions">
                     <button type="submit" class="submit-btn">Add Admin</button>
                     <button type="button" class="cancel-btn" id="cancel-admin">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Admin Popup -->
+    <div id="update-admin-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-update-admin">×</span>
+            <h2>Update Admin</h2>
+            <form id="update-admin-form">
+                <input type="hidden" id="update-admin-id" name="admin_id">
+                <div class="form-group">
+                    <label for="update-admin-username">Username</label>
+                    <input type="text" id="update-admin-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-admin-email">Email</label>
+                    <input type="email" id="update-admin-email" name="email" required>
+                </div>
+                <div class="form-group password-group">
+                    <label for="update-admin-password">Password (optional)</label>
+                    <input type="password" id="update-admin-password" name="password">
+                    <button type="button" class="toggle-password"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Save Changes</button>
+                    <button type="button" class="cancel-btn" id="cancel-update-admin">Cancel</button>
                 </div>
             </form>
         </div>
@@ -324,6 +336,65 @@
                     <button type="button" class="cancel-btn" id="cancel-user">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Update User Popup -->
+     <div id="update-user-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-update-user">×</span>
+            <h2>Update User</h2>
+            <form id="update-user-form">
+                <input type="hidden" id="update-user-id" name="user_id">
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="update-first-name">First Name</label>
+                            <input type="text" id="update-first-name" name="first_name" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="update-last-name">Last Name</label>
+                            <input type="text" id="update-last-name" name="last_name" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="update-address">Address</label>
+                    <input type="text" id="update-address" name="address" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-phone">Phone</label>
+                    <input type="tel" id="update-phone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-user-email">Email</label>
+                    <input type="email" id="update-user-email" name="email" required>
+                </div>
+                <div class="form-group password-group">
+                    <label for="update-user-password">Password (optional)</label>
+                    <input type="password" id="update-user-password" name="password">
+                    <button type="button" class="toggle-password"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Save Changes</button>
+                    <button type="button" class="cancel-btn" id="cancel-update-user">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- New Logout Popup -->
+    <div class="popup" id="logout-popup">
+        <div class="popup-content">
+            <button class="popup-close" id="close-logout">×</button>
+            <h2>Logout</h2>
+            <p>Are you sure you want to logout?</p>
+            <div class="popup-buttons">
+                <button class="popup-btn" id="logout-confirm-btn">Logout</button>
+                <button class="cancel-btn" id="cancel-logout">Cancel</button>
+            </div>
         </div>
     </div>
 

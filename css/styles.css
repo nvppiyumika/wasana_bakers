@@ -249,14 +249,22 @@ nav ul li a:hover {
 
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr); /* 3 equal-width columns */
     gap: 30px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .product-card {
+    background: white;
     border: 1px solid #eee;
     border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     transition: box-shadow 0.3s;
 }
 
@@ -283,40 +291,60 @@ nav ul li a:hover {
 
 .product-details {
     padding: 20px;
+    text-align: center;
 }
 
 .product-details h3 {
     font-size: 1.3rem;
-    margin-bottom: 10px;
+    margin: 0 0 10px;
 }
 
 .product-details p {
-    margin-bottom: 5px;
+    margin: 5px 0;
     font-size: 0.9rem;
     color: #666;
 }
 
 .product-details .price {
-    font-size: 1.2rem;
     font-weight: bold;
+    font-size: 1.2rem;
     color: var(--primary-color);
     margin: 10px 0;
 }
 
 .add-to-cart-btn {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--accent-color);
+    background: var(--accent-color);
     color: white;
     border: none;
-    border-radius: 5px;
+    padding: 10px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    width: 100%;
+    border-radius: 5px;
     font-weight: 500;
+    transition: background-color 0.3s;
+    margin-top: 10px;
 }
 
 .add-to-cart-btn:hover {
     background-color: #009933;
+}
+
+.add-to-cart-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Responsive Design for Products */
+@media (max-width: 768px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on tablets */
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr; /* 1 column on mobile */
+    }
 }
 
 /* Branches Section */
@@ -329,6 +357,68 @@ nav ul li a:hover {
 .branches h2 {
     font-size: 2.5rem;
     margin-bottom: 40px;
+}
+
+/* Contact Section */
+.contact {
+    padding: 80px 0;
+    background-color: white;
+    text-align: center;
+}
+
+.contact h2 {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+}
+
+.contact-form {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.contact-form .form-group {
+    text-align: left;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: var(--font-main);
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: #999;
+    font-weight: 500;
+}
+
+.contact-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.contact-form .submit-btn {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    align-self: center;
+}
+
+.contact-form .submit-btn:hover {
+    background-color: #009933;
 }
 
 /* Footer */
@@ -532,8 +622,12 @@ footer p {
         transform: none;
     }
 
-    .services-grid, .products-grid {
+    .services-grid {
         grid-template-columns: 1fr;
+    }
+
+    .contact-form {
+        max-width: 100%;
     }
 
     .popup-content {
@@ -554,4 +648,59 @@ footer p {
         flex-direction: column;
         align-items: center;
     }
+}
+
+/* Assuming existing styles for .user-actions, .login-btn, etc. */
+.user-name-btn {
+    padding: 8px 15px;
+    margin-left: 10px;
+    color: var(--dark-color, #333);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.user-name-btn:hover {
+    color: var(--accent-color, #e74c3c);
+}
+
+#logout-popup .popup-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+#logout-popup p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.popup-btn, .cancel-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.popup-btn {
+    background-color: var(--accent-color, #e74c3c);
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #ccc;
+    color: #333;
+}
+
+.products-grid .error {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
 }

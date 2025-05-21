@@ -1,54 +1,45 @@
 <?php
 session_start();
-require '../db.php';
-
 header('Content-Type: application/json');
-
-// Only allow POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
-    exit;
-}
+include 'config.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
-$type = isset($data['type']) ? $data['type'] : '';
-$username_email = isset($data['username_email']) ? $data['username_email'] : '';
-$password = isset($data['password']) ? $data['password'] : '';
 
-if ($type === 'user') {
-    // Only allow login by email (case-insensitive)
-    $stmt = $conn->prepare('SELECT id, password FROM users WHERE LOWER(email) = LOWER(?)');
-    $stmt->bind_param('s', $username_email);
-    $stmt->execute();
-    $stmt->store_result();
-    if ($stmt->num_rows === 1) {
-        $stmt->bind_result($user_id, $hashed_password);
-        $stmt->fetch();
-        if (password_verify($password, $hashed_password)) {
-            $_SESSION['user_id'] = $user_id;
-            echo json_encode(['success' => true, 'message' => 'User login successful.']);
-            exit;
-        }
-    }
-    echo json_encode(['success' => false, 'message' => 'Invalid user credentials.']);
-    exit;
-} elseif ($type === 'admin') {
-    $stmt = $conn->prepare('SELECT id, password FROM admins WHERE email = ? OR username = ?');
-    $stmt->bind_param('ss', $username_email, $username_email);
-    $stmt->execute();
-    $stmt->store_result();
-    if ($stmt->num_rows === 1) {
-        $stmt->bind_result($admin_id, $hashed_password);
-        $stmt->fetch();
-        if (password_verify($password, $hashed_password)) {
-            $_SESSION['admin_id'] = $admin_id;
-            echo json_encode(['success' => true, 'message' => 'Admin login successful.']);
-            exit;
-        }
-    }
-    echo json_encode(['success' => false, 'message' => 'Invalid admin credentials.']);
-    exit;
-} else {
-    echo json_encode(['success' => false, 'message' => 'Invalid login type.']);
+$username_email = $data['username_email'] ?? '';
+$password = $data['password'] ?? '';
+$type = $data['type'] ?? '';
+
+if (empty($username_email) || empty($password) || empty($type)) {
+    echo json_encode(['success' => false, 'message' => 'All fields are required']);
     exit;
 }
+
+try {
+    $table = ($type === 'admin') ? 'admins' : 'users';
+    if ($type === 'admin') {
+        $stmt = $conn->prepare("SELECT id, username, password FROM admins WHERE email = ? OR username = ?");
+        $stmt->execute([$username_email, $username_email]);
+    } else {
+        $stmt = $conn->prepare("SELECT id, first_name, password FROM users WHERE email = ?");
+        $stmt->execute([$username_email]);
+    }
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['type'] = $type;
+        $display_name = ($type === 'admin') ? $user['username'] : $user['first_name'];
+        error_log("Session set: user_id={$_SESSION['user_id']}, type={$_SESSION['type']}, display_name=$display_name");
+        echo json_encode([
+            'success' => true,
+            'message' => 'Login successful',
+            'display_name' => $display_name
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
+    }
+} catch (PDOException $e) {
+    error_log("PDO Error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+}
+?>
