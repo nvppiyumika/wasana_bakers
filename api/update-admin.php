@@ -1,55 +1,42 @@
 <?php
-header('Content-Type: application/json');
-include 'config.php';
+require_once 'config.php';
+
+if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'admin') {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+$admin_id = $input['admin_id'] ?? '';
+$username = trim($input['username'] ?? '');
+$email = trim($input['email'] ?? '');
+$password = $input['password'] ?? '';
+
+if (empty($admin_id) || empty($username) || empty($email)) {
+    echo json_encode(['success' => false, 'message' => 'Username and email are required']);
+    exit();
+}
 
 try {
-    if (!$conn) {
-        throw new Exception('Database connection failed');
-    }
-
-    $input = json_decode(file_get_contents('php://input'), true);
-    $admin_id = $input['admin_id'] ?? '';
-    $username = $input['username'] ?? '';
-    $email = $input['email'] ?? '';
-    $password = $input['password'] ?? '';
-
-    if (empty($admin_id) || !is_numeric($admin_id)) {
-        throw new Exception('Invalid or missing admin_id');
-    }
-    if (empty($username)) {
-        throw new Exception('Username is required');
-    }
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        throw new Exception('Valid email is required');
-    }
-
-    $query = "UPDATE admins SET username = ?, email = ?";
-    $params = [$username, $email];
+    $query = "UPDATE admins SET username = :username, email = :email";
+    $params = ['admin_id' => $admin_id, 'username' => $username, 'email' => $email];
 
     if (!empty($password)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $query .= ", password = ?";
-        $params[] = $hashed_password;
+        $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+        $query .= ", password = :password";
+        $params['password'] = $hashed_password;
     }
 
-    $query .= " WHERE id = ?";
-    $params[] = $admin_id;
-
+    $query .= " WHERE id = :admin_id";
     $stmt = $conn->prepare($query);
     $stmt->execute($params);
 
-    if ($stmt->rowCount() === 0) {
-        throw new Exception('No admin found with the specified ID or no changes made');
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true, 'message' => 'Admin updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Admin not found or no changes made']);
     }
-
-    echo json_encode(['success' => true, 'message' => 'Admin updated successfully']);
 } catch (PDOException $e) {
-    error_log('Database error in update-admin.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-} catch (Exception $e) {
-    error_log('General error in update-admin.php: ' . $e->getMessage());
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Failed to update admin: ' . $e->getMessage()]);
 }
 ?>

@@ -1,73 +1,56 @@
 <?php
 session_start();
-header('Content-Type: application/json');
-include 'config.php';
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 
-if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'user') {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Please log in to checkout']);
-    exit;
-}
-
-$user_id = $_SESSION['user_id'];
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
 
 try {
-    if (!$conn) {
-        throw new Exception('Database connection failed');
+    // Check if user is logged in
+    if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'user') {
+        http_response_code(401);
+        throw new Exception('Please log in to checkout');
     }
 
-    $input = json_decode(file_get_contents('php://input'), true);
-    $items = $input['items'] ?? [];
-    $subtotal = floatval($input['subtotal'] ?? 0);
-    $shipping = floatval($input['shipping'] ?? 200);
-    $total = floatval($input['total'] ?? 0);
+    require_once 'config.php';
 
-    if (empty($items)) {
+    // Get input data
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) {
+        throw new Exception('Invalid input data');
+    }
+
+    $subtotal = isset($input['subtotal']) ? floatval($input['subtotal']) : 0;
+    $shipping = isset($input['shipping']) ? floatval($input['shipping']) : 0;
+    $total = isset($input['total']) ? floatval($input['total']) : 0;
+    $user_id = $_SESSION['user_id'];
+
+    // Validate inputs
+    if ($subtotal <= 0 || $shipping < 0 || $total <= 0) {
+        throw new Exception('Invalid checkout amounts');
+    }
+
+    // Verify cart is not empty
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM cart WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    if ($stmt->fetchColumn() == 0) {
         throw new Exception('Cart is empty');
     }
 
-    if ($subtotal <= 0 || $total <= 0) {
-        throw new Exception('Invalid cart total');
+    // Call stored procedure
+    $stmt = $pdo->prepare("CALL ProcessCheckout(?, ?, ?, ?)");
+    $result = $stmt->execute([$user_id, $subtotal, $shipping, $total]);
+
+    if (!$result) {
+        throw new Exception('Failed to process checkout');
     }
 
-    // Validate product_ids
-    $stmt = $conn->prepare("SELECT id FROM products WHERE id = ?");
-    foreach ($items as $item) {
-        $stmt->execute([$item['product_id']]);
-        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-            throw new Exception("Invalid product ID: {$item['product_id']}");
-        }
-    }
-
-    $conn->beginTransaction();
-
-    // Insert order
-    $stmt = $conn->prepare("INSERT INTO orders (user_id, total, shipping, status) VALUES (?, ?, ?, 'pending')");
-    $stmt->execute([$user_id, $total, $shipping]);
-    $order_id = $conn->lastInsertId();
-
-    // Insert order items
-    $stmt = $conn->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
-    foreach ($items as $item) {
-        $stmt->execute([$order_id, $item['product_id'], $item['quantity'], $item['price']]);
-    }
-
-    // Clear cart
-    $stmt = $conn->prepare("DELETE FROM cart_items WHERE user_id = ?");
-    $stmt->execute([$user_id]);
-
-    $conn->commit();
-
-    echo json_encode(['success' => true, 'message' => 'Order placed successfully']);
-} catch (PDOException $e) {
-    $conn->rollBack();
-    error_log('Database error in checkout.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['success' => true, 'message' => 'Checkout successful']);
 } catch (Exception $e) {
-    $conn->rollBack();
-    error_log('General error in checkout.php: ' . $e->getMessage());
-    http_response_code(400);
+    error_log('Checkout.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+    http_response_code($e->getCode() === 401 ? 401 : 400);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

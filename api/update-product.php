@@ -1,85 +1,64 @@
 <?php
 header('Content-Type: application/json');
-include 'config.php';
+header('Access-Control-Allow-Origin: *');
+
+require_once 'config.php';
 
 try {
-    // Verify database connection
-    if (!$conn) {
-        throw new Exception('Database connection failed');
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+        exit;
     }
 
-    // Get form data
-    $product_id = $_POST['product_id'] ?? '';
-    $name = $_POST['name'] ?? '';
-    $category = $_POST['category'] ?? '';
-    $price = $_POST['price'] ?? '';
-    $availability = $_POST['availability'] ?? '';
+    $product_id = filter_var($_POST['product_id'] ?? null, FILTER_VALIDATE_INT);
+    $name = filter_var($_POST['name'] ?? '', FILTER_SANITIZE_STRING);
+    $category = filter_var($_POST['category'] ?? '', FILTER_SANITIZE_STRING);
+    $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
+    $availability = filter_var($_POST['availability'] ?? '', FILTER_SANITIZE_STRING);
 
-    // Validate inputs
-    if (empty($product_id) || !is_numeric($product_id)) {
-        throw new Exception('Invalid product ID');
-    }
-    if (empty($name) || strlen($name) > 100) {
-        throw new Exception('Product name is required and must be less than 100 characters');
-    }
-    $valid_categories = ['Cake', 'Bread', 'Pastry', 'Dessert', 'Sweets'];
-    if (!in_array($category, $valid_categories)) {
-        throw new Exception('Invalid category');
-    }
-    if (!is_numeric($price) || $price <= 0) {
-        throw new Exception('Price must be a positive number');
-    }
-    $valid_availability = ['in_stock', 'out_of_stock'];
-    if (!in_array($availability, $valid_availability)) {
-        throw new Exception('Invalid availability status');
+    if (!$product_id || !$name || !$category || $price <= 0 || !in_array($availability, ['in_stock', 'out_of_stock'])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid input data']);
+        exit;
     }
 
-    // Prepare update query
-    $query = "UPDATE products SET name = ?, category = ?, price = ?, availability = ?";
-    $params = [$name, $category, floatval($price), $availability];
-
-    // Handle image if provided
+    $image = null;
+    $bind_image = false;
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $image = $_FILES['image'];
-        // Validate image
-        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-        if (!in_array($image['type'], $allowed_types)) {
-            throw new Exception('Invalid image format. Only JPEG, PNG, and GIF are allowed.');
+        $maxSizeMB = 16;
+        $maxSizeBytes = $maxSizeMB * 1024 * 1024;
+        if ($_FILES['image']['size'] > $maxSizeBytes) {
+            echo json_encode(['success' => false, 'message' => 'Image size exceeds 16MB']);
+            exit;
         }
-        if ($image['size'] > 64 * 1024 * 1024) {
-            throw new Exception('Image size exceeds 64MB.');
+        $image = file_get_contents($_FILES['image']['tmp_name']);
+        if ($image === false) {
+            echo json_encode(['success' => false, 'message' => 'Failed to read image']);
+            exit;
         }
-        // Read image data
-        $image_data = file_get_contents($image['tmp_name']);
-        if ($image_data === false) {
-            throw new Exception('Failed to read image data');
-        }
-        // Add image to query
-        $query .= ", image = ?";
-        $params[] = $image_data;
+        $bind_image = true;
     }
 
-    // Complete query
-    $query .= " WHERE id = ?";
+    $sql = "UPDATE products SET name = ?, category = ?, price = ?, availability = ?";
+    $params = [$name, $category, $price, $availability];
+    if ($bind_image) {
+        $sql .= ", image = ?";
+        $params[] = $image;
+    }
+    $sql .= " WHERE id = ?";
     $params[] = $product_id;
 
-    // Execute update
-    $stmt = $conn->prepare($query);
-    $stmt->execute($params);
-
-    // Verify update
-    if ($stmt->rowCount() === 0) {
-        throw new Exception('No product found with the specified ID or no changes made');
+    $stmt = $pdo->prepare($sql);
+    if ($bind_image) {
+        $stmt->bindParam(count($params), $image, PDO::PARAM_LOB);
     }
 
-    echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
-} catch (PDOException $e) {
-    error_log('Database error in update-product.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    if ($stmt->execute($params)) {
+        echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update product']);
+    }
 } catch (Exception $e) {
-    error_log('General error in update-product.php: ' . $e->getMessage());
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
 ?>

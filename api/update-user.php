@@ -1,67 +1,52 @@
 <?php
-header('Content-Type: application/json');
-include 'config.php';
+require_once 'config.php';
+
+if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'admin') {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+$user_id = $input['user_id'] ?? '';
+$first_name = trim($input['first_name'] ?? '');
+$last_name = trim($input['last_name'] ?? '');
+$address = trim($input['address'] ?? '');
+$phone = trim($input['phone'] ?? '');
+$email = trim($input['email'] ?? '');
+$password = $input['password'] ?? '';
+
+if (empty($user_id) || empty($first_name) || empty($last_name) || empty($address) || empty($phone) || empty($email)) {
+    echo json_encode(['success' => false, 'message' => 'Required fields are missing']);
+    exit();
+}
 
 try {
-    if (!$conn) {
-        throw new Exception('Database connection failed');
-    }
-
-    $input = json_decode(file_get_contents('php://input'), true);
-    $user_id = $input['user_id'] ?? '';
-    $first_name = $input['first_name'] ?? '';
-    $last_name = $input['last_name'] ?? '';
-    $address = $input['address'] ?? '';
-    $phone = $input['phone'] ?? '';
-    $email = $input['email'] ?? '';
-    $password = $input['password'] ?? '';
-
-    if (empty($user_id) || !is_numeric($user_id)) {
-        throw new Exception('Invalid or missing user_id');
-    }
-    if (empty($first_name)) {
-        throw new Exception('First name is required');
-    }
-    if (empty($last_name)) {
-        throw new Exception('Last name is required');
-    }
-    if (empty($address)) {
-        throw new Exception('Address is required');
-    }
-    if (empty($phone)) {
-        throw new Exception('Phone is required');
-    }
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        throw new Exception('Valid email is required');
-    }
-
-    $query = "UPDATE users SET first_name = ?, last_name = ?, address = ?, phone = ?, email = ?";
-    $params = [$first_name, $last_name, $address, $phone, $email];
+    $query = "UPDATE users SET first_name = :first_name, last_name = :last_name, address = :address, phone = :phone, email = :email";
+    $params = [
+        'user_id' => $user_id,
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'address' => $address,
+        'phone' => $phone,
+        'email' => $email
+    ];
 
     if (!empty($password)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $query .= ", password = ?";
-        $params[] = $hashed_password;
+        $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+        $query .= ", password = :password";
+        $params['password'] = $hashed_password;
     }
 
-    $query .= " WHERE id = ?";
-    $params[] = $user_id;
-
+    $query .= " WHERE id = :user_id";
     $stmt = $conn->prepare($query);
     $stmt->execute($params);
 
-    if ($stmt->rowCount() === 0) {
-        throw new Exception('No user found with the specified ID or no changes made');
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'User not found or no changes made']);
     }
-
-    echo json_encode(['success' => true, 'message' => 'User updated successfully']);
 } catch (PDOException $e) {
-    error_log('Database error in update-user.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-} catch (Exception $e) {
-    error_log('General error in update-user.php: ' . $e->getMessage());
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Failed to update user: ' . $e->getMessage()]);
 }
 ?>

@@ -1,80 +1,70 @@
 <?php
-header('Content-Type: application/json');
-include 'config.php';
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 
-$category = $_GET['category'] ?? 'all';
-$product_id = $_GET['id'] ?? null;
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
 
 try {
-    // Verify database connection
-    if (!$conn) {
-        throw new Exception('Database connection failed');
-    }
+    require_once 'config.php';
 
-    if ($product_id !== null) {
-        // Fetch single product by ID
-        $query = "SELECT id, name, category, price, image, availability FROM products WHERE id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->execute([$product_id]);
-        $product = $stmt->fetch(PDO::FETCH_ASSOC);
+    $category = isset($_GET['category']) && $_GET['category'] !== 'all' ? $_GET['category'] : null;
+    $isAdmin = isset($_SESSION['admin_id']) && $_SESSION['type'] === 'admin';
 
-        if (!$product) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Product not found']);
-            exit;
+    if (isset($_GET['id'])) {
+        // Fetch single product
+        $id = filter_var($_GET['id'], FILTER_VALIDATE_INT);
+        if ($id === false) {
+            throw new Exception('Invalid product ID');
         }
-
-        // Process single product
-        $product['price'] = floatval($product['price']);
-        if ($product['image'] && is_string($product['image']) && strlen($product['image']) > 0) {
-            $encoded = base64_encode($product['image']);
-            if ($encoded === false) {
-                throw new Exception('Base64 encoding failed');
-            }
-            $product['image'] = 'data:image/jpeg;base64,' . $encoded;
-        } else {
-            $product['image'] = '';
+        $stmt = $pdo->prepare("SELECT id, name, category, price, availability, CONCAT('get-image.php?id=', id) AS image FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+        $product = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$product) {
+            throw new Exception('Product not found');
         }
         echo json_encode($product);
     } else {
-        // Fetch all products (existing logic)
-        $query = "SELECT id, name, category, price, image, availability FROM products";
-        if ($category !== 'all') {
-            $query .= " WHERE category = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->execute([$category]);
+        // Fetch multiple products
+        if ($isAdmin) {
+            // Admins see all products
+            $query = "SELECT id, name, category, price, availability, CONCAT('get-image.php?id=', id) AS image FROM products";
+            if ($category) {
+                $query .= " WHERE category = ?";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([$category]);
+            } else {
+                $stmt = $pdo->query($query);
+            }
         } else {
-            $stmt = $conn->prepare($query);
-            $stmt->execute();
-        }
-
-        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($products as &$product) {
-            try {
-                $product['price'] = floatval($product['price']);
-                if ($product['image'] && is_string($product['image']) && strlen($product['image']) > 0) {
-                    $encoded = base64_encode($product['image']);
-                    if ($encoded === false) {
-                        throw new Exception('Base64 encoding failed');
-                    }
-                    $product['image'] = 'data:image/jpeg;base64,' . $encoded;
-                } else {
-                    $product['image'] = '';
-                }
-            } catch (Exception $e) {
-                error_log('Error processing product ID ' . $product['id'] . ': ' . $e->getMessage());
-                $product['image'] = '';
+            // Non-admins see only in-stock products via view
+            $query = "SELECT id, name, category, price, availability, image FROM availableproducts";
+            if ($category) {
+                $query .= " WHERE category = ?";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([$category]);
+            } else {
+                $stmt = $pdo->query($query);
             }
         }
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Validate image URLs
+        foreach ($products as &$product) {
+            if (empty($product['image']) || !preg_match('/^get-image\.php\?id=\d+$/', $product['image'])) {
+                error_log('Invalid image URL for product ID ' . $product['id'] . ': ' . ($product['image'] ?? 'null'));
+                $product['image'] = 'images/placeholder.jpg';
+            }
+        }
+        unset($product);
+
         echo json_encode($products);
     }
-} catch (PDOException $e) {
-    error_log('Database error in products.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 } catch (Exception $e) {
-    error_log('General error in products.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    error_log('Products.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

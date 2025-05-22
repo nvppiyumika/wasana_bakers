@@ -1,36 +1,36 @@
 <?php
+session_start();
 header('Content-Type: application/json');
-include 'config.php';
+header('Access-Control-Allow-Origin: *');
+
+require_once 'config.php';
+
+// Check if user is logged in as admin
+if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+$user_id = filter_var($input['user_id'] ?? '', FILTER_VALIDATE_INT);
+
+if (!$user_id) {
+    echo json_encode(['success' => false, 'message' => 'User ID is required']);
+    exit();
+}
 
 try {
-    if (!$conn) {
-        throw new Exception('Database connection failed');
-    }
-
-    $input = json_decode(file_get_contents('php://input'), true);
-    $user_id = $input['user_id'] ?? '';
-    error_log('Delete User Input: ' . json_encode($input));
-
-    if (empty($user_id) || !is_numeric($user_id)) {
-        throw new Exception('Invalid or missing user_id');
-    }
-
-    $query = "DELETE FROM users WHERE id = ?";
-    $stmt = $conn->prepare($query);
+    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
-
-    if ($stmt->rowCount() === 0) {
-        throw new Exception('No user found with the specified ID');
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'User not found']);
     }
-
-    echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
 } catch (PDOException $e) {
-    error_log('Database error in delete-user.php: ' . $e->getMessage());
+    error_log('Delete-user.php error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-} catch (Exception $e) {
-    error_log('General error in delete-user.php: ' . $e->getMessage());
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Failed to delete user: ' . $e->getMessage()]);
 }
 ?>

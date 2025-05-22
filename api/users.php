@@ -1,39 +1,41 @@
 <?php
-header('Content-Type: application/json');
-include 'config.php';
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
 
 try {
-    if (!$conn) {
-        throw new Exception('Database connection failed');
+    require_once 'config.php';
+
+    // Check if admin is logged in
+    if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
+        throw new Exception('Unauthorized access');
     }
 
-    $user_id = isset($_GET['id']) ? $_GET['id'] : null;
-
-    if ($user_id && is_numeric($user_id)) {
-        $query = "SELECT id, first_name, last_name, email, address, phone FROM users WHERE id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->execute([$user_id]);
+    if (isset($_GET['id'])) {
+        // Fetch single user
+        $id = filter_var($_GET['id'], FILTER_VALIDATE_INT);
+        if ($id === false) {
+            throw new Exception('Invalid user ID');
+        }
+        $stmt = $pdo->prepare("SELECT id, first_name, last_name, address, phone, email FROM users WHERE id = ?");
+        $stmt->execute([$id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
         if (!$user) {
             throw new Exception('User not found');
         }
-
         echo json_encode($user);
     } else {
-        $query = "SELECT id, first_name, last_name, email FROM users";
-        $stmt = $conn->prepare($query);
-        $stmt->execute();
+        // Fetch all users
+        $stmt = $pdo->query("SELECT id, first_name, last_name, address, phone, email FROM users");
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         echo json_encode($users);
     }
-} catch (PDOException $e) {
-    error_log('Database error in users.php: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 } catch (Exception $e) {
-    error_log('General error in users.php: ' . $e->getMessage());
+    error_log('Users.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

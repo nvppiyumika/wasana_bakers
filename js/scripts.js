@@ -1,10 +1,10 @@
-
 window.addEventListener('load', () => {
     const popups = document.querySelectorAll('.popup');
     popups.forEach(popup => popup.style.display = 'none');
     loadProducts();
     loadAdmins();
     loadUsers();
+    loadMessages();
     if (window.location.pathname.includes('cart.html')) {
         loadCart();
     }
@@ -12,7 +12,7 @@ window.addEventListener('load', () => {
         loadOrders();
     }
     checkLoginStatus();
-    handleContactForm(); // Add contact form handler
+    handleContactForm();
 });
 
 // Smooth Scrolling
@@ -68,7 +68,7 @@ const cancelUpdateOrder = document.getElementById('cancel-update-order');
 // Check Login Status
 async function checkLoginStatus() {
     try {
-        const response = await fetch('api/check-login.php');
+        const response = await fetch('api/check-login.php', { credentials: 'same-origin' });
         const result = await response.json();
         if (result.loggedIn && result.display_name) {
             if (loginBtn) loginBtn.style.display = 'none';
@@ -149,7 +149,8 @@ if (logoutConfirmBtn) {
         try {
             const response = await fetch('api/logout.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin'
             });
             const result = await response.json();
             if (result.success) {
@@ -214,25 +215,60 @@ document.querySelectorAll('.toggle-password').forEach(toggle => {
     });
 });
 
+// Input Validation
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePhone(phone) {
+    return /^\+?\d{10,15}$/.test(phone);
+}
+
+function validatePassword(password) {
+    return password.length >= 6;
+}
+
 // User Signup
 const signupForm = document.getElementById('signup-form');
 if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
-            first_name: document.getElementById('first-name').value,
-            last_name: document.getElementById('last-name').value,
-            address: document.getElementById('address').value,
-            phone: document.getElementById('phone').value,
-            email: document.getElementById('email').value,
+            first_name: document.getElementById('first-name').value.trim(),
+            last_name: document.getElementById('last-name').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('email').value.trim(),
             password: document.getElementById('signup-password').value,
             confirm_password: document.getElementById('confirm-password').value
         };
+
+        if (!formData.first_name || !formData.last_name || !formData.address || !formData.phone || !formData.email || !formData.password) {
+            alert('All fields are required');
+            return;
+        }
+        if (!validateEmail(formData.email)) {
+            alert('Invalid email format');
+            return;
+        }
+        if (!validatePhone(formData.phone)) {
+            alert('Invalid phone number');
+            return;
+        }
+        if (!validatePassword(formData.password)) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+        if (formData.password !== formData.confirm_password) {
+            alert('Passwords do not match');
+            return;
+        }
 
         try {
             const response = await fetch('api/signup.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -254,15 +290,21 @@ if (userLoginForm) {
     userLoginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
-            username_email: document.getElementById('username-email').value,
+            username_email: document.getElementById('username-email').value.trim(),
             password: document.getElementById('password').value,
             type: 'user'
         };
+
+        if (!formData.username_email || !formData.password) {
+            alert('All fields are required');
+            return;
+        }
 
         try {
             const response = await fetch('api/login.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -289,14 +331,21 @@ if (adminLoginForm) {
     adminLoginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
-            username_email: document.getElementById('admin-username-email').value,
+            username_email: document.getElementById('admin-username-email').value.trim(),
             password: document.getElementById('admin-password').value,
             type: 'admin'
         };
+
+        if (!formData.username_email || !formData.password) {
+            alert('All fields are required');
+            return;
+        }
+
         try {
             const response = await fetch('api/login.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -329,10 +378,20 @@ function handleContactForm() {
                 message: document.getElementById('contact-message').value.trim()
             };
 
+            if (!formData.name || !formData.email || !formData.message) {
+                alert('All fields are required');
+                return;
+            }
+            if (!validateEmail(formData.email)) {
+                alert('Invalid email format');
+                return;
+            }
+
             try {
                 const response = await fetch('api/contact.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(formData)
                 });
                 const result = await response.json();
@@ -355,11 +414,18 @@ async function loadProducts() {
     if (!productsGrid) return;
 
     try {
-        const response = await fetch(`api/products.php?category=${category}`);
+        const response = await fetch(`api/products.php?category=${category}`, { credentials: 'same-origin' });
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
-        const products = await response.json();
+        const text = await response.text();
+        let products;
+        try {
+            products = JSON.parse(text);
+        } catch (e) {
+            console.error('Failed to parse JSON:', text.substring(0, 100) + '...');
+            throw new Error(`Invalid JSON response: ${e.message}`);
+        }
 
         if (!Array.isArray(products)) {
             throw new Error(products.message || 'Invalid response from server');
@@ -374,17 +440,19 @@ async function loadProducts() {
         const isAdminPage = window.location.pathname.includes('admin.html');
 
         products.forEach(product => {
-            const imageSrc = product.image && product.image.startsWith('data:image/') ? product.image : 'images/placeholder.jpg';
+            const price = parseFloat(product.price);
+            const formattedPrice = isNaN(price) ? '0.00' : price.toFixed(2);
+            const imageSrc = product.image ? (product.image.startsWith('get-image.php') ? 'api/' + product.image : product.image) : 'images/placeholder.jpg';
             const productCard = `
                 <div class="product-card">
                     <div class="product-image">
-                        <img src="${imageSrc}" alt="${product.name}">
+                        <img src="${imageSrc}" alt="${product.name}" onerror="this.src='images/placeholder.jpg'; console.warn('Image failed to load for product ID ${product.id}: ${imageSrc}');">
                     </div>
                     <div class="product-details">
                         <h3>${product.name}</h3>
                         <p>Category: ${product.category}</p>
                         <p>Availability: ${product.availability === 'in_stock' ? 'In Stock' : 'Out of Stock'}</p>
-                        <p class="price">LKR ${product.price.toFixed(2)}</p>
+                        <p class="price">LKR ${formattedPrice}</p>
                         ${isAdminPage ? `
                             <div class="admin-controls">
                                 <button class="update-btn" data-product-id="${product.id}">Update</button>
@@ -404,7 +472,7 @@ async function loadProducts() {
                 btn.addEventListener('click', async () => {
                     const productId = btn.getAttribute('data-product-id');
                     try {
-                        const response = await fetch(`api/products.php?id=${productId}`);
+                        const response = await fetch(`api/products.php?id=${productId}`, { credentials: 'same-origin' });
                         if (!response.ok) {
                             throw new Error(`Server error: ${response.status} ${response.statusText}`);
                         }
@@ -426,7 +494,7 @@ async function loadProducts() {
                         formElements.id.value = product.id || '';
                         formElements.name.value = product.name || '';
                         formElements.category.value = product.category || '';
-                        formElements.price.value = product.price ? product.price.toFixed(2) : '';
+                        formElements.price.value = product.price ? parseFloat(product.price).toFixed(2) : '';
                         formElements.availability.value = product.availability || '';
                         formElements.image.value = '';
                         if (updateProductPopup) {
@@ -444,16 +512,15 @@ async function loadProducts() {
             document.querySelectorAll('.products-grid .product-delete-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const productId = btn.getAttribute('data-product-id');
-                    console.log('Product Delete Clicked:', { productId });
                     if (confirm(`Are you sure you want to delete product ID ${productId}?`)) {
                         try {
                             const response = await fetch('api/delete-product.php', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
+                                credentials: 'same-origin',
                                 body: JSON.stringify({ product_id: productId })
                             });
                             const result = await response.json();
-                            console.log('Delete Product Response:', result);
                             alert(result.message);
                             if (result.success) {
                                 loadProducts();
@@ -473,6 +540,7 @@ async function loadProducts() {
                         const response = await fetch('api/cart.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ product_id: productId, quantity: 1 })
                         });
                         const result = await response.json();
@@ -497,8 +565,8 @@ async function loadProducts() {
             let errorMessage = 'Failed to load products. Please try again later.';
             if (error.message.includes('Server error')) {
                 errorMessage = `Unable to connect to the server: ${error.message}`;
-            } else if (error.message.includes('Invalid response')) {
-                errorMessage = `Server error: ${error.message}`;
+            } else if (error.message.includes('Invalid JSON')) {
+                errorMessage = `Server returned invalid data: ${error.message}`;
             } else if (error.message) {
                 errorMessage = `Error: ${error.message}`;
             }
@@ -513,7 +581,7 @@ async function loadOrders() {
     if (!ordersGrid) return;
 
     try {
-        const response = await fetch('api/orders.php');
+        const response = await fetch('api/orders.php', { credentials: 'same-origin' });
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
@@ -530,12 +598,12 @@ async function loadOrders() {
         }
 
         orders.forEach(order => {
-            const itemsList = order.items.map(item => `${item.name} x${item.quantity}`).join(', ');
+            const itemsList = order.items;
             const orderCard = `
                 <div class="order-card">
                     <p>Order #${order.id} - ${itemsList}</p>
                     <p>Status: ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</p>
-                    <p>Total: LKR ${order.total.toFixed(2)}</p>
+                    <p>Total: LKR ${parseFloat(order.total).toFixed(2)}</p>
                     <p>Created: ${order.created_at}</p>
                     <div class="admin-controls">
                         <button class="update-btn order-update-btn" data-order-id="${order.id}" data-order-status="${order.status}">Update Status</button>
@@ -576,6 +644,7 @@ async function loadOrders() {
                         const response = await fetch('api/delete-order.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ order_id: orderId })
                         });
                         const result = await response.json();
@@ -609,10 +678,13 @@ async function loadOrders() {
 // Load Admins
 async function loadAdmins() {
     const adminsGrid = document.querySelector('.admins-grid');
-    if (!adminsGrid) return;
+    if (!adminsGrid) {
+        console.warn('Admins grid not found in DOM');
+        return;
+    }
 
     try {
-        const response = await fetch('api/admins.php');
+        const response = await fetch('api/admins.php', { credentials: 'same-origin' });
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
@@ -646,7 +718,7 @@ async function loadAdmins() {
             btn.addEventListener('click', async () => {
                 const adminId = btn.getAttribute('data-admin-id');
                 try {
-                    const response = await fetch(`api/admins.php?id=${adminId}`);
+                    const response = await fetch(`api/admins.php?id=${adminId}`, { credentials: 'same-origin' });
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status} ${response.statusText}`);
                     }
@@ -682,16 +754,15 @@ async function loadAdmins() {
         document.querySelectorAll('.admins-grid .admin-delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const adminId = btn.getAttribute('data-admin-id');
-                console.log('Admin Delete Clicked:', { adminId });
                 if (confirm(`Are you sure you want to delete admin ID ${adminId}?`)) {
                     try {
                         const response = await fetch('api/delete-admin.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ admin_id: adminId })
                         });
                         const result = await response.json();
-                        console.log('Delete Admin Response:', result);
                         alert(result.message);
                         if (result.success) {
                             loadAdmins();
@@ -722,10 +793,13 @@ async function loadAdmins() {
 // Load Users
 async function loadUsers() {
     const usersGrid = document.querySelector('.users-grid');
-    if (!usersGrid) return;
+    if (!usersGrid) {
+        console.warn('Users grid not found in DOM');
+        return;
+    }
 
     try {
-        const response = await fetch('api/users.php');
+        const response = await fetch('api/users.php', { credentials: 'same-origin' });
         if (!response.ok) {
             throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
@@ -759,7 +833,7 @@ async function loadUsers() {
             btn.addEventListener('click', async () => {
                 const userId = btn.getAttribute('data-user-id');
                 try {
-                    const response = await fetch(`api/users.php?id=${userId}`);
+                    const response = await fetch(`api/users.php?id=${userId}`, { credentials: 'same-origin' });
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status} ${response.statusText}`);
                     }
@@ -801,16 +875,15 @@ async function loadUsers() {
         document.querySelectorAll('.users-grid .user-delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const userId = btn.getAttribute('data-user-id');
-                console.log('User Delete Clicked:', { userId });
                 if (confirm(`Are you sure you want to delete user ID ${userId}?`)) {
                     try {
                         const response = await fetch('api/delete-user.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ user_id: userId })
                         });
                         const result = await response.json();
-                        console.log('Delete User Response:', result);
                         alert(result.message);
                         if (result.success) {
                             loadUsers();
@@ -838,6 +911,85 @@ async function loadUsers() {
     }
 }
 
+// Load Messages
+async function loadMessages() {
+    const messagesGrid = document.querySelector('.messages-grid');
+    if (!messagesGrid) {
+        console.warn('Messages grid not found in DOM');
+        return;
+    }
+
+    try {
+        const response = await fetch('api/contact.php', { credentials: 'same-origin' });
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        const messages = await response.json();
+
+        if (!Array.isArray(messages)) {
+            throw new Error(messages.message || 'Invalid response from server');
+        }
+
+        messagesGrid.innerHTML = '';
+        if (messages.length === 0) {
+            messagesGrid.innerHTML = '<p>No messages found.</p>';
+            return;
+        }
+
+        messages.forEach(message => {
+            const messageCard = `
+                <div class="message-card">
+                    <p>Name: ${message.name}</p>
+                    <p>Email: ${message.email}</p>
+                    <p>Message: ${message.message}</p>
+                    <p>Received: ${message.created_at}</p>
+                    <div class="admin-controls">
+                        <button class="delete-btn message-delete-btn" data-message-id="${message.id}">Delete</button>
+                    </div>
+                </div>
+            `;
+            messagesGrid.innerHTML += messageCard;
+        });
+
+        document.querySelectorAll('.messages-grid .message-delete-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const messageId = btn.getAttribute('data-message-id');
+                if (confirm(`Are you sure you want to delete message ID ${messageId}?`)) {
+                    try {
+                        const response = await fetch('api/delete-message.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ message_id: messageId })
+                        });
+                        const result = await response.json();
+                        alert(result.message);
+                        if (result.success) {
+                            loadMessages();
+                        }
+                    } catch (error) {
+                        console.error('Error deleting message:', error);
+                        alert('Failed to delete message. Please try again.');
+                    }
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error loading messages:', error.message, error.stack);
+        if (messagesGrid) {
+            let errorMessage = 'Failed to load messages. Please try again later.';
+            if (error.message.includes('Server error')) {
+                errorMessage = `Unable to connect to the server: ${error.message}`;
+            } else if (error.message.includes('Invalid response')) {
+                errorMessage = `Server error: ${error.message}`;
+            } else if (error.message) {
+                errorMessage = `Error: ${error.message}`;
+            }
+            messagesGrid.innerHTML = `<p class="error">${errorMessage}</p>`;
+        }
+    }
+}
+
 // Update Order Form Submission
 const updateOrderForm = document.getElementById('update-order-form');
 if (updateOrderForm) {
@@ -848,10 +1000,16 @@ if (updateOrderForm) {
             status: document.getElementById('update-order-status').value
         };
 
+        if (!formData.order_id || !formData.status) {
+            alert('All fields are required');
+            return;
+        }
+
         try {
             const response = await fetch('api/update-order.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -876,12 +1034,12 @@ if (updateProductForm) {
         const imageInput = document.getElementById('update-product-image');
         const formData = new FormData();
         formData.append('product_id', document.getElementById('update-product-id').value);
-        formData.append('name', document.getElementById('update-product-name').value);
+        formData.append('name', document.getElementById('update-product-name').value.trim());
         formData.append('category', document.getElementById('update-category').value);
         formData.append('price', document.getElementById('update-price').value);
         formData.append('availability', document.getElementById('update-availability').value);
         if (imageInput.files.length > 0) {
-            const maxSizeMB = 64;
+            const maxSizeMB = 16;
             const maxSizeBytes = maxSizeMB * 1024 * 1024;
             if (imageInput.files[0].size > maxSizeBytes) {
                 alert(`Image size exceeds ${maxSizeMB}MB. Please choose a smaller file.`);
@@ -890,9 +1048,19 @@ if (updateProductForm) {
             formData.append('image', imageInput.files[0]);
         }
 
+        if (!formData.get('product_id') || !formData.get('name') || !formData.get('category') || !formData.get('price') || !formData.get('availability')) {
+            alert('All fields are required');
+            return;
+        }
+        if (isNaN(formData.get('price')) || formData.get('price') <= 0) {
+            alert('Price must be a positive number');
+            return;
+        }
+
         try {
             const response = await fetch('api/update-product.php', {
                 method: 'POST',
+                credentials: 'same-origin',
                 body: formData
             });
             const result = await response.json();
@@ -916,15 +1084,29 @@ if (updateAdminForm) {
         e.preventDefault();
         const formData = {
             admin_id: document.getElementById('update-admin-id').value,
-            username: document.getElementById('update-admin-username').value,
-            email: document.getElementById('update-admin-email').value,
+            username: document.getElementById('update-admin-username').value.trim(),
+            email: document.getElementById('update-admin-email').value.trim(),
             password: document.getElementById('update-admin-password').value
         };
+
+        if (!formData.admin_id || !formData.username || !formData.email) {
+            alert('Username and email are required');
+            return;
+        }
+        if (!validateEmail(formData.email)) {
+            alert('Invalid email format');
+            return;
+        }
+        if (formData.password && !validatePassword(formData.password)) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
 
         try {
             const response = await fetch('api/update-admin.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -948,18 +1130,36 @@ if (updateUserForm) {
         e.preventDefault();
         const formData = {
             user_id: document.getElementById('update-user-id').value,
-            first_name: document.getElementById('update-first-name').value,
-            last_name: document.getElementById('update-last-name').value,
-            address: document.getElementById('update-address').value,
-            phone: document.getElementById('update-phone').value,
-            email: document.getElementById('update-user-email').value,
+            first_name: document.getElementById('update-first-name').value.trim(),
+            last_name: document.getElementById('update-last-name').value.trim(),
+            address: document.getElementById('update-address').value.trim(),
+            phone: document.getElementById('update-phone').value.trim(),
+            email: document.getElementById('update-user-email').value.trim(),
             password: document.getElementById('update-user-password').value
         };
+
+        if (!formData.user_id || !formData.first_name || !formData.last_name || !formData.address || !formData.phone || !formData.email) {
+            alert('Required fields are missing');
+            return;
+        }
+        if (!validateEmail(formData.email)) {
+            alert('Invalid email format');
+            return;
+        }
+        if (!validatePhone(formData.phone)) {
+            alert('Invalid phone number');
+            return;
+        }
+        if (formData.password && !validatePassword(formData.password)) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
 
         try {
             const response = await fetch('api/update-user.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -984,7 +1184,7 @@ async function loadCart() {
     if (!cartTableBody || !cartSummary || !checkoutBtn) return;
 
     try {
-        const response = await fetch('api/cart.php');
+        const response = await fetch('api/cart.php', { credentials: 'same-origin' });
         const result = await response.json();
         if (!result.success) {
             cartTableBody.innerHTML = '<tr><td colspan="5">Please log in to view your cart</td></tr>';
@@ -1000,16 +1200,18 @@ async function loadCart() {
             checkoutBtn.disabled = true;
         } else {
             result.items.forEach(item => {
-                const itemSubtotal = item.price * item.quantity;
+                const price = parseFloat(item.price);
+                const quantity = parseInt(item.quantity);
+                const itemSubtotal = isNaN(price) || isNaN(quantity) ? 0 : price * quantity;
                 subtotal += itemSubtotal;
-                const imageSrc = item.image && item.image.startsWith('data:image/') ? item.image : 'images/placeholder.jpg';
+                const imageSrc = item.image ? (item.image.startsWith('get-image.php') ? 'api/' + item.image : item.image) : 'images/placeholder.jpg';
                 const row = `
                     <tr>
                         <td class="product-info">
-                            <img src="${imageSrc}" alt="${item.name}">
+                            <img src="${imageSrc}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'; console.warn('Image failed to load for cart item ID ${item.id}: ${imageSrc}');">
                             <span>${item.name}</span>
                         </td>
-                        <td>LKR ${item.price.toFixed(2)}</td>
+                        <td>LKR ${isNaN(price) ? '0.00' : price.toFixed(2)}</td>
                         <td><input type="number" value="${item.quantity}" min="1" class="quantity-input" data-cart-id="${item.id}"></td>
                         <td>LKR ${itemSubtotal.toFixed(2)}</td>
                         <td><button class="remove-btn" data-cart-id="${item.id}"><i class="fas fa-trash-alt"></i></button></td>
@@ -1028,19 +1230,20 @@ async function loadCart() {
             <p class="total"><span>Total:</span> LKR ${total.toFixed(2)}</p>
         `;
 
-        // Quantity Update Handlers
         document.querySelectorAll('.quantity-input').forEach(input => {
             input.addEventListener('change', async () => {
                 const cartId = input.getAttribute('data-cart-id');
                 const newQuantity = parseInt(input.value);
                 if (newQuantity < 1) {
                     input.value = 1;
+                    alert('Quantity must be at least 1');
                     return;
                 }
                 try {
                     const response = await fetch('api/cart.php', {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
                         body: JSON.stringify({ cart_id: cartId, quantity: newQuantity })
                     });
                     const result = await response.json();
@@ -1058,7 +1261,6 @@ async function loadCart() {
             });
         });
 
-        // Remove Item Handlers
         document.querySelectorAll('.remove-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const cartId = btn.getAttribute('data-cart-id');
@@ -1067,6 +1269,7 @@ async function loadCart() {
                         const response = await fetch('api/cart.php', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ cart_id: cartId })
                         });
                         const result = await response.json();
@@ -1082,12 +1285,12 @@ async function loadCart() {
             });
         });
 
-        // Checkout Handler
         checkoutBtn.addEventListener('click', async () => {
             try {
                 const response = await fetch('api/checkout.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ items: result.items, subtotal, shipping, total })
                 });
                 const checkoutResult = await response.json();
@@ -1153,7 +1356,6 @@ if (addUserBtn) {
         closeBtn.addEventListener('click', () => {
             [addProductPopup, addAdminPopup, addUserPopup].forEach(popup => {
                 if (popup) popup.style.display = 'none';
-
             });
         });
     }
@@ -1179,24 +1381,33 @@ if (addProductForm) {
             return;
         }
 
-        const maxSizeMB = 64;
+        const maxSizeMB = 16;
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
         if (imageInput.files[0].size > maxSizeBytes) {
             alert(`Image size exceeds ${maxSizeMB}MB. Please choose a smaller file.`);
             return;
         }
 
-        const imageFile = imageInput.files[0];
         const formData = new FormData();
-        formData.append('name', document.getElementById('product-name').value);
+        formData.append('name', document.getElementById('product-name').value.trim());
         formData.append('category', document.getElementById('category').value);
         formData.append('price', document.getElementById('price').value);
-        formData.append('image', imageFile);
+        formData.append('image', imageInput.files[0]);
         formData.append('availability', document.getElementById('availability').value);
+
+        if (!formData.get('name') || !formData.get('category') || !formData.get('price') || !formData.get('availability')) {
+            alert('All fields are required');
+            return;
+        }
+        if (isNaN(formData.get('price')) || formData.get('price') <= 0) {
+            alert('Price must be a positive number');
+            return;
+        }
 
         try {
             const response = await fetch('api/add-products.php', {
                 method: 'POST',
+                credentials: 'same-origin',
                 body: formData
             });
             const result = await response.json();
@@ -1219,15 +1430,29 @@ if (addAdminForm) {
     addAdminForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
-            username: document.getElementById('admin-username').value,
-            email: document.getElementById('admin-email').value,
+            username: document.getElementById('admin-username').value.trim(),
+            email: document.getElementById('admin-email').value.trim(),
             password: document.getElementById('admin-password').value
         };
+
+        if (!formData.username || !formData.email || !formData.password) {
+            alert('All fields are required');
+            return;
+        }
+        if (!validateEmail(formData.email)) {
+            alert('Invalid email format');
+            return;
+        }
+        if (!validatePassword(formData.password)) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
 
         try {
             const response = await fetch('api/add-admin.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();
@@ -1250,18 +1475,36 @@ if (addUserForm) {
     addUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = {
-            first_name: document.getElementById('first-name').value,
-            last_name: document.getElementById('last-name').value,
-            address: document.getElementById('address').value,
-            phone: document.getElementById('phone').value,
-            email: document.getElementById('user-email').value,
+            first_name: document.getElementById('first-name').value.trim(),
+            last_name: document.getElementById('last-name').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('user-email').value.trim(),
             password: document.getElementById('user-password').value
         };
+
+        if (!formData.first_name || !formData.last_name || !formData.address || !formData.phone || !formData.email || !formData.password) {
+            alert('All fields are required');
+            return;
+        }
+        if (!validateEmail(formData.email)) {
+            alert('Invalid email format');
+            return;
+        }
+        if (!validatePhone(formData.phone)) {
+            alert('Invalid phone number');
+            return;
+        }
+        if (!validatePassword(formData.password)) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
 
         try {
             const response = await fetch('api/add-user.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify(formData)
             });
             const result = await response.json();

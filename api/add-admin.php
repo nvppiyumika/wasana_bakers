@@ -1,42 +1,70 @@
 <?php
-header('Content-Type: application/json');
-include 'config.php';
-
 session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Admin access required']);
-    exit;
-}
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 
-$data = json_decode(file_get_contents('php://input'), true);
-
-$username = $data['username'] ?? '';
-$email = $data['email'] ?? '';
-$password = $data['password'] ?? '';
-
-if (empty($username) || empty($email) || empty($password)) {
-    echo json_encode(['success' => false, 'message' => 'All fields are required']);
-    exit;
-}
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
 
 try {
-    // Check if username or email exists
-    $stmt = $conn->prepare("SELECT id FROM admins WHERE username = ? OR email = ?");
-    $stmt->execute([$username, $email]);
-    if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => false, 'message' => 'Username or email already exists']);
-        exit;
+    // Check admin session
+    if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
+        http_response_code(401);
+        throw new Exception('Unauthorized');
+    }
+
+    require_once 'config.php';
+
+    // Get input data
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!$input) {
+        throw new Exception('Invalid input data');
+    }
+
+    $username = trim($input['username'] ?? '');
+    $email = trim($input['email'] ?? '');
+    $password = $input['password'] ?? '';
+
+    // Validate inputs
+    if (!$username || !$email || !$password) {
+        throw new Exception('All fields are required');
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception('Invalid email format');
+    }
+    if (strlen($password) < 6) {
+        throw new Exception('Password must be at least 6 characters');
+    }
+
+    // Check if email or username already exists
+    $stmt = $pdo->prepare("SELECT id FROM admins WHERE email = ? OR username = ?");
+    $stmt->execute([$email, $username]);
+    if ($stmt->fetch()) {
+        throw new Exception('Email or username already registered');
     }
 
     // Hash password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    if (!$hashed_password) {
+        throw new Exception('Failed to hash password');
+    }
 
     // Insert admin
-    $stmt = $conn->prepare("INSERT INTO admins (username, email, password) VALUES (?, ?, ?)");
-    $stmt->execute([$username, $email, $hashed_password]);
+    $stmt = $pdo->prepare("
+        INSERT INTO admins (username, email, password)
+        VALUES (?, ?, ?)
+    ");
+    $result = $stmt->execute([$username, $email, $hashed_password]);
+
+    if (!$result) {
+        throw new Exception('Failed to add admin');
+    }
 
     echo json_encode(['success' => true, 'message' => 'Admin added successfully']);
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    error_log('Add-admin.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+    http_response_code($e->getCode() === 401 ? 401 : 400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

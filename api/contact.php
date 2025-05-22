@@ -1,62 +1,51 @@
 <?php
-header('Content-Type: application/json');
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
 
-require_once 'config.php'; // Assumes database connection file exists
-
-$response = ['success' => false, 'message' => ''];
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
 
 try {
-    // Check if request method is POST
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Invalid request method.');
-    }
+    require_once 'config.php';
 
-    // Get JSON input
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception('Invalid JSON input.');
-    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Handle contact form submission
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$data || !isset($data['name'], $data['email'], $data['message'])) {
+            throw new Exception('Missing required fields');
+        }
 
-    // Validate input fields
-    $name = isset($input['name']) ? trim($input['name']) : '';
-    $email = isset($input['email']) ? trim($input['email']) : '';
-    $message = isset($input['message']) ? trim($input['message']) : '';
+        $name = trim($data['name']);
+        $email = trim($data['email']);
+        $message = trim($data['message']);
 
-    if (empty($name) || empty($email) || empty($message)) {
-        throw new Exception('All fields are required.');
-    }
+        if (empty($name) || empty($email) || empty($message)) {
+            throw new Exception('All fields are required');
+        }
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        throw new Exception('Invalid email format.');
-    }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Invalid email format');
+        }
 
-    if (strlen($name) > 100) {
-        throw new Exception('Name must not exceed 100 characters.');
-    }
+        $stmt = $pdo->prepare("INSERT INTO messages (name, email, message) VALUES (?, ?, ?)");
+        $stmt->execute([$name, $email, $message]);
 
-    if (strlen($email) > 100) {
-        throw new Exception('Email must not exceed 100 characters.');
-    }
-
-    // Prepare and execute SQL statement
-    $stmt = $conn->prepare("INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)");
-    if (!$stmt) {
-        throw new Exception('Database prepare error: ' . $conn->error);
-    }
-
-    $stmt->bind_param("sss", $name, $email, $message);
-    if ($stmt->execute()) {
-        $response['success'] = true;
-        $response['message'] = 'Message sent successfully!';
+        echo json_encode(['success' => true, 'message' => 'Message sent successfully']);
     } else {
-        throw new Exception('Failed to save message: ' . $stmt->error);
+        // Fetch all messages (for admin view)
+        if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
+            throw new Exception('Unauthorized access');
+        }
+
+        $stmt = $pdo->query("SELECT id, name, email, message, created_at FROM messages ORDER BY created_at DESC");
+        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($messages);
     }
-
-    $stmt->close();
 } catch (Exception $e) {
-    $response['message'] = $e->getMessage();
+    error_log('Contact.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-
-$conn->close();
-echo json_encode($response);
 ?>

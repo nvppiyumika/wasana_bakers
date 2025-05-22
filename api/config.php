@@ -1,13 +1,19 @@
 <?php
-$servername = "localhost";
-$username = "root"; // Default XAMPP MySQL username
-$password = ""; // Default XAMPP MySQL password (empty)
-$dbname = "wasana_bakers";
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', 'C:/xampp/php/logs/php_error_log');
+
+$dsn = 'mysql:host=localhost;dbname=wasana_bakers;charset=utf8';
+$username = 'root';
+$password = '';
 
 try {
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = new PDO($dsn, $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    error_log('Database connection failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
+    exit;
 }
 ?>
