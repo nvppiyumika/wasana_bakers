@@ -24,6 +24,7 @@
                     <li><a href="#home">Home</a></li>
                     <li><a href="#products">Products</a></li>
                     <li><a href="#orders">Orders</a></li>
+                    <li><a href="#employees">Employees</a></li>
                     <li><a href="#admins">Admins</a></li>
                     <li><a href="#users">Users</a></li>
                     <li><a href="#messages">Messages</a></li>
@@ -40,15 +41,42 @@
     <section id="home" class="home">
         <div class="container">
             <h2>Dashboard Overview</h2>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Available Products</h3>
+                    <p id="in-stock-products">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <p id="total-users">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Employees</h3>
+                    <p id="total-employees">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Orders</h3>
+                    <p id="pending-orders">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Completed Orders</h3>
+                    <p id="completed-orders">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Cancelled Orders</h3>
+                    <p id="cancelled-orders">0</p>
+                </div>
+                
+            </div>
+
             <div class="charts-container">
-                <div class="chart">
+                <div class="chart-card">
+                    <h3>Order Status Distribution (Pie Chart)</h3>
+                    <canvas id="status-pie-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Daily Sales Trend (Line Chart)</h3>
                     <canvas id="sales-chart"></canvas>
-                </div>
-                <div class="chart">
-                    <canvas id="order-chart"></canvas>
-                </div>
-                <div class="chart">
-                    <canvas id="user-chart"></canvas>
                 </div>
             </div>
         </div>
@@ -69,11 +97,22 @@
     </section>
 
     <!-- Orders Section -->
-    <section id="orders" class="orders-section">
+    <section id="orders" class="orders">
         <div class="container">
             <h2>Orders</h2>
             <div class="orders-grid"></div>
         </div>
+    </section>
+
+    <!-- Employees Section -->
+    <section id="employees" class="employees">
+        <div class="container">
+            <h2>Employees</h2>
+            <div class="admin-actions">
+                <button class="add-btn" id="add-employee-btn">Add Employee</button>
+            </div>
+            <div class="employees-grid"></div>
+        </div>    
     </section>
 
     <!-- Admins Section -->
@@ -200,9 +239,9 @@
         </div>
     </div>
     <!-- Update Order Popup -->
-    <div id="update-order-popup" class="popup">
+    <div class="popup" id="update-order-popup">
         <div class="popup-content">
-            <span class="close-popup" id="close-update-order">&times;</span>
+            <span class="close" id="close-update-order">&times;</span>
             <h2>Update Order Status</h2>
             <form id="update-order-form">
                 <input type="hidden" id="update-order-id">
@@ -215,9 +254,76 @@
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
-                <div class="form-buttons">
-                    <button type="submit" class="btn submit-btn">Save Changes</button>
-                    <button type="button" class="btn cancel-btn" id="cancel-update-order">Cancel</button>
+                <button type="submit" class="submit-btn">Save Changes</button>
+                <button type="button" class="cancel-btn" id="cancel-update-order">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <!-- Add employee Popup -->
+    <div class="popup" id="add-employee-popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-employee">×</span>
+            <h2>Add Employee</h2>
+            <form id="add-employee-form">
+                <div class="form-group">
+                    <label for="employee-name">Name</label>
+                    <input type="text" id="employee-name" placeholder="Enter name" required>
+                </div>
+                <div class="form-group">
+                    <label for="employee-email">Email</label>
+                    <input type="email" id="employee-email" placeholder="Enter email" required>
+                </div>
+                <div class="form-group">
+                    <label for="employee-role">Role</label>
+                    <select id="employee-role" required>
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Baker">Baker</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="employee-hire-date">Hire Date</label>
+                    <input type="date" id="employee-hire-date" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Employee</button>
+                    <button type="button" class="cancel-btn" id="cancel-employee">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Update employee Popup -->
+    <div class="popup" id="update-employee-popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-update-employee">×</span>
+            <h2>Update Employee</h2>
+            <form id="update-employee-form">
+                <input type="hidden" id="update-employee-id">
+                <div class="form-group">
+                    <label for="update-employee-name">Name</label>
+                    <input type="text" id="update-employee-name" placeholder="Enter name" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-employee-email">Email</label>
+                    <input type="email" id="update-employee-email" placeholder="Enter email" required>
+                </div>
+                <div class="form-group">
+                    <label for="update-employee-role">Role</label>
+                    <select id="update-employee-role" required>
+                        <option value="" disabled>Select Role</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Baker">Baker</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="update-employee-hire-date">Hire Date</label>
+                    <input type="date" id="update-employee-hire-date" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Save Changes</button>
+                    <button type="button" class="cancel-btn" id="cancel-update-employee">Cancel</button>
                 </div>
             </form>
         </div>
@@ -446,38 +552,7 @@
             }
         });
 
-        // Order Count Chart (Bar Chart)
-        const orderCtx = document.getElementById('order-chart').getContext('2d');
-        new Chart(orderCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                datasets: [{
-                    label: 'Orders',
-                    data: [30, 45, 38, 50, 42],
-                    backgroundColor: '#00b050',
-                    borderColor: '#009933',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Number of Orders' }
-                    },
-                    x: {
-                        title: { display: true, text: 'Month' }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Monthly Order Count' }
-                }
-            }
-        });
-
+        
         // User Count Chart (Doughnut Chart)
         const userCtx = document.getElementById('user-chart').getContext('2d');
         new Chart(userCtx, {

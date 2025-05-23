@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['type'] !== 'admin') {
+if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit();
 }

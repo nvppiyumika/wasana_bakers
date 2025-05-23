@@ -9,12 +9,16 @@ try {
     require_once 'config.php';
 
     if (!isset($_GET['id'])) {
-        throw new Exception('Product ID is required');
+        header('Content-Type: image/png');
+        readfile('../images/placeholder.png');
+        exit;
     }
 
     $id = filter_var($_GET['id'], FILTER_VALIDATE_INT);
     if ($id === false) {
-        throw new Exception('Invalid product ID');
+        header('Content-Type: image/png');
+        readfile('../images/placeholder.png');
+        exit;
     }
 
     $stmt = $pdo->prepare("SELECT image FROM products WHERE id = ?");
@@ -22,15 +26,19 @@ try {
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$product || empty($product['image'])) {
-        throw new Exception('Image not found for product ID ' . $id);
+        header('Content-Type: image/png');
+        readfile('../images/placeholder.png');
+        exit;
     }
 
-    // Detect image MIME type
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->buffer($product['image']);
     $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!in_array($mime, $allowed_mimes)) {
-        throw new Exception('Invalid image format for product ID ' . $id . ': ' . $mime);
+        error_log('Invalid image format for product ID ' . $id . ': ' . $mime);
+        header('Content-Type: image/png');
+        readfile('../images/placeholder.png');
+        exit;
     }
 
     header('Content-Type: ' . $mime);
@@ -39,9 +47,8 @@ try {
     exit;
 } catch (Exception $e) {
     error_log('Get-image.php error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
-    http_response_code(404);
     header('Content-Type: image/png');
-    readfile('../images/placeholder.png'); // Ensure placeholder.png exists
+    readfile('../images/placeholder.png');
     exit;
 }
 ?>

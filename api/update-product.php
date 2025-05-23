@@ -1,8 +1,15 @@
 <?php
+session_start();
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
 require_once 'config.php';
+
+if (!isset($_SESSION['admin_id']) || $_SESSION['type'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Please log in as an admin']);
+    exit;
+}
 
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -30,9 +37,17 @@ try {
             echo json_encode(['success' => false, 'message' => 'Image size exceeds 16MB']);
             exit;
         }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($_FILES['image']['tmp_name']);
+        $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!in_array($mime, $allowed_mimes)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid image format. Only JPEG, PNG, and GIF are allowed.']);
+            exit;
+        }
         $image = file_get_contents($_FILES['image']['tmp_name']);
-        if ($image === false) {
-            echo json_encode(['success' => false, 'message' => 'Failed to read image']);
+        if ($image === false || strlen($image) === 0) {
+            error_log('Failed to read image file for product ID: ' . $product_id);
+            echo json_encode(['success' => false, 'message' => 'Failed to read image file']);
             exit;
         }
         $bind_image = true;
@@ -55,9 +70,11 @@ try {
     if ($stmt->execute($params)) {
         echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
     } else {
+        error_log('Failed to update product ID ' . $product_id . ': ' . json_encode($stmt->errorInfo()));
         echo json_encode(['success' => false, 'message' => 'Failed to update product']);
     }
 } catch (Exception $e) {
+    error_log('Update-product.php error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
